@@ -70,6 +70,7 @@ pixel_size = 1e-3
 ts = 0
 t = 0
 keys = set()
+pause = False
 while True:
     for event in pygame.event.get():
         #print event
@@ -100,34 +101,37 @@ while True:
             reset()
         elif event.type == pygame.KEYDOWN and event.key == pygame.K_b:
             batteries.append((pygame.mouse.get_pos(), event.mod & pygame.KMOD_SHIFT, event.mod & pygame.KMOD_CTRL))
+        elif event.type == pygame.KEYDOWN and event.key == pygame.K_p:
+            pause = not pause
     
     dt = 3e-4
     
-    for i in xrange(5):
-        if True: #if ts % 2 == 0:
-            curlHx = (-Hz[:, :-1] + Hz[:, 1:])/pixel_size # defined for [:, :-1]
-            curlHy = (Hz[:-1, :] - Hz[1:, :])/pixel_size # defined for [:-1, :]
-            #Ex[:, :-1] += dt * curlHx / er[:, :-1]
-            #Ey[:-1, :] += dt * curlHy / er[:-1, :]
-            #Ex[:, :-1] += dt * curlHx
-            #Ey[:-1, :] += dt * curlHy
-            # dE/dt = (curl H - sigma E)/er
-            # newE = oldE + dt * ((curl H - sigma E)/er)
-            # newE = oldE + dt * ((curl H - sigma (newE+oldE)/2)/er)
-            # (1 + sigma/2 er) newE = oldE + dt * curl H / er - sigma/2er oldE
-            # newE = (dt * curl H / er + (1 - sigma/2er) oldE)/(1 + sigma/2 er)
-            Ex[:, :-1] = ((1-sigma[:, :-1]/2/er[:, :-1]) * Ex[:, :-1] + dt*curlHx/er[:, :-1])/(1 + sigma[:, :-1]/2/er[:, :-1])
-            Ey[:-1, :] = ((1-sigma[:-1, :]/2/er[:-1, :]) * Ey[:-1, :] + dt*curlHy/er[:-1, :])/(1 + sigma[:-1, :]/2/er[:-1, :])
-            map(draw_battery, batteries)
-            Ex *= notmetal
-            Ey *= notmetal
-            t += dt/2
-        if True:#else:
-            curlE = (Ey[1:, 1:] - Ex[1:, 1:] - Ey[:-1, 1:] + Ex[1:, :-1])/pixel_size # defined for [1:, 1:]
-            # dH/dt = -curl E / mu_r
-            Hz[1:, 1:] -= dt * curlE #/ mu_r
-            t += dt/2
-        ts += 2#1
+    if not pause:
+        for i in xrange(5):
+            if True: #if ts % 2 == 0:
+                curlHx = (-Hz[:, :-1] + Hz[:, 1:])/pixel_size # defined for [:, :-1]
+                curlHy = (Hz[:-1, :] - Hz[1:, :])/pixel_size # defined for [:-1, :]
+                #Ex[:, :-1] += dt * curlHx / er[:, :-1]
+                #Ey[:-1, :] += dt * curlHy / er[:-1, :]
+                #Ex[:, :-1] += dt * curlHx
+                #Ey[:-1, :] += dt * curlHy
+                # dE/dt = (curl H - sigma E)/er
+                # newE = oldE + dt * ((curl H - sigma E)/er)
+                # newE = oldE + dt * ((curl H - sigma (newE+oldE)/2)/er)
+                # (1 + sigma/2 er) newE = oldE + dt * curl H / er - sigma/2er oldE
+                # newE = (dt * curl H / er + (1 - sigma/2er) oldE)/(1 + sigma/2 er)
+                Ex[:, :-1] = ((1-sigma[:, :-1]/2/er[:, :-1]) * Ex[:, :-1] + dt*curlHx/er[:, :-1])/(1 + sigma[:, :-1]/2/er[:, :-1])
+                Ey[:-1, :] = ((1-sigma[:-1, :]/2/er[:-1, :]) * Ey[:-1, :] + dt*curlHy/er[:-1, :])/(1 + sigma[:-1, :]/2/er[:-1, :])
+                map(draw_battery, batteries)
+                Ex *= notmetal
+                Ey *= notmetal
+                t += dt/2
+            if True:#else:
+                curlE = (Ey[1:, 1:] - Ex[1:, 1:] - Ey[:-1, 1:] + Ex[1:, :-1])/pixel_size # defined for [1:, 1:]
+                # dH/dt = -curl E / mu_r
+                Hz[1:, 1:] -= dt * curlE #/ mu_r
+                t += dt/2
+            ts += 2#1
     
     
     if pygame.mouse.get_pressed()[0]:
