@@ -14,6 +14,14 @@ SIZE = 320, 240
 
 Ex = numpy.zeros(SIZE)
 Ey = numpy.zeros(SIZE)
+if 0:
+    for x in xrange(SIZE[0]):
+        for y in xrange(SIZE[1]):
+            dx = x - (SIZE[0]-1)/2
+            dy = y - (SIZE[1]-1)/2
+            dist = math.sqrt(dx**2 + dy**2)
+            Ex[x, y] = 1e3*dx/dist**2
+            Ey[x, y] = 1e3*dy/dist**2
 Hz = numpy.zeros(SIZE)
 notmetal = numpy.ones(SIZE, dtype=numpy.uint8)
 er = numpy.ones(SIZE)
@@ -71,6 +79,7 @@ ts = 0
 t = 0
 keys = set()
 pause = False
+mouse_down_pos = None
 while True:
     for event in pygame.event.get():
         #print event
@@ -81,9 +90,14 @@ while True:
         if event.type == pygame.QUIT:
             sys.exit()
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-            draw(event.pos)
+            mouse_down_pos = event.pos
+            #draw(event.pos)
+        elif event.type == pygame.MOUSEBUTTONUP and event.button == 1:
+            mouse_down_pos = None
+            #draw(event.pos)
         elif event.type == pygame.MOUSEMOTION and event.buttons[0]:
-            draw(event.pos)
+            #draw(event.pos)
+            mouse_down_pos = event.pos
         elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 3:
             draw_metal(event.pos, pygame.K_LSHIFT in keys)
         elif event.type == pygame.MOUSEMOTION and event.buttons[2]:
@@ -107,6 +121,13 @@ while True:
     dt = 3e-4
     
     if not pause:
+        Jx = numpy.zeros((SIZE[0], SIZE[1]-1))
+        Jy = numpy.zeros((SIZE[0]-1, SIZE[1]))
+        if mouse_down_pos is not None:
+            for dx in xrange(-5, 5+1):
+                for dy in xrange(-5, 5+1):
+                    Jx[mouse_down_pos[0]+dx, mouse_down_pos[1]+dy] = 1e6
+                    Jy[mouse_down_pos[0]+dx, mouse_down_pos[1]+dy] = 0
         for i in xrange(5):
             if True: #if ts % 2 == 0:
                 curlHx = (-Hz[:, :-1] + Hz[:, 1:])/pixel_size # defined for [:, :-1]
@@ -115,7 +136,10 @@ while True:
                 #Ey[:-1, :] += dt * curlHy / er[:-1, :]
                 #Ex[:, :-1] += dt * curlHx
                 #Ey[:-1, :] += dt * curlHy
-                # dE/dt = (curl H - sigma E)/er
+                # dE/dt = (curl H - J - sigma E)/er
+                curlHx -= Jx
+                curlHy -= Jy
+                # equations continue without J
                 # newE = oldE + dt * ((curl H - sigma E)/er)
                 # newE = oldE + dt * ((curl H - sigma (newE+oldE)/2)/er)
                 # (1 + sigma/2 er) newE = oldE + dt * curl H / er - sigma/2er oldE
